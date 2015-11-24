@@ -1,10 +1,9 @@
-## Part(a)
 nearest_center <- function( train , test , cl , center , distance ){
   test_pixels <- test[,2:257]
   test_classes <- test[,1]
   
   train_center = matrix(nrow=10,ncol=256,0)
-  if (center == "means"){
+  if (center == "mean"){
     for(i in 0:9){
       train_center[i+1,] = apply(train[cl==i,], MARGIN = 2 , FUN = mean)
     }
@@ -13,8 +12,6 @@ nearest_center <- function( train , test , cl , center , distance ){
       train_center[i+1,] = apply(train[cl==i,], MARGIN = 2 , FUN = median)
     }
   }
-  
-  Class = rep(10,length(test_classes))
   
   calc_Dist <- function( row, distance, train_center){
     temp = rbind(row,row,row,row,row,row,row,row,row,row)
@@ -28,13 +25,15 @@ nearest_center <- function( train , test , cl , center , distance ){
     return(c(index-1,dist[index]))
   }
   
-  Dist <- rep(NA,nrow(test_pixels))
+  Class <- rep(NA,length(test_classes))
+  Dist <- rep(NA,length(test_classes))
+  
   for (i in 1:nrow(test_pixels)){
     result = calc_Dist(test_pixels[i,],distance,train_center)
     Class[i] <- result[1]
-    Dist[i] = result[2]
+    Dist[i] <- result[2]
   }
   
-  return(c(Class,Dist))
-
+  return(cbind(Class,Dist))
 }
+
