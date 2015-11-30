@@ -1,0 +1,119 @@
+## Part(a)
+nearest_center <- function( train , test , cl , center , distance ){
+  test_pixels <- test[,2:257]
+  test_classes <- test[,1]
+  
+  train_center = matrix(nrow=10,ncol=256,0)
+  if (center == "mean"){
+    for(i in 0:9){
+      train_center[i+1,] = apply(train[cl==i,], MARGIN = 2 , FUN = mean)
+    }
+  }else{
+    for(i in 0:9){
+      train_center[i+1,] = apply(train[cl==i,], MARGIN = 2 , FUN = median)
+    }
+  }
+  
+  calc_Dist <- function( row, distance, train_center){
+    temp = rbind(row,row,row,row,row,row,row,row,row,row)
+    dist = rep(1e2,nrow(train_center))
+    if (distance == "euclidean"){
+      dist = rowSums((temp - train_center)^2)
+    }else{
+      dist = rowSums(abs(temp-train_center))
+    }
+    index = which.min(dist)
+    return(c(index-1,dist[index]))
+  }
+  
+  Class <- rep(NA,length(test_classes))
+  Dist <- rep(NA,length(test_classes))
+  
+  for (i in 1:nrow(test_pixels)){
+    result = calc_Dist(test_pixels[i,],distance,train_center)
+    Class[i] <- result[1]
+    Dist[i] <- result[2]
+  }
+  
+  return(cbind(Class,Dist))
+}
+
+
+## Load Data
+  library(ElemStatLearn)
+  data(zip.train)
+  data(zip.test)
+  train = zip.train[,-1]
+  cl = zip.train[,1]
+  test = zip.test
+ 
+  
+## Part(b)
+means = matrix(nrow=10,ncol=256,0)
+for(i in 0:9){
+  means[i+1,] = apply(train[cl==i,], MARGIN = 2 , FUN = mean)
+}
+
+
+for (i in 1:10){
+  image_i <- matrix(means[i,],nrow=16)
+  image_i <- image_i[,16:1]
+  image(1:16,1:16, image_i , col = gray(256:0/256),xlab="",ylab="",xaxt="n",yaxt="n")
+}
+
+
+
+## Part(c)
+medians = matrix(nrow=10,ncol=256,0)
+for(i in 0:9){
+  medians[i+1,] = apply(train[cl==i,], MARGIN = 2 , FUN = median)
+}
+
+
+for (i in 1:10){
+  image_i <- matrix(medians[i,],nrow=16)
+  image_i <- image_i[,16:1]
+  image(1:16,1:16, image_i , col = gray(256:0/256),xlab="",ylab="",xaxt="n",yaxt="n")
+}
+
+
+## Part(d)
+predictions <- nearest_center( train , test , cl , "mean","euclidean")
+table(test[,1] , predictions[,1],dnn=c("Observed","Predicted"))
+mean(test[,1] == predictions[,1])
+
+## Part(e)
+## Find indices of 5 farthest test cases
+max_dist <- rep(0,5)
+for (i in 0:4){
+  max_dist[i+1] <- which( predictions[,2] == sort(predictions[,2],partial=nrow(predictions)-i)[nrow(predictions)-i])
+}
+
+for (i in max_dist){
+  image_i <- matrix(test[i,-1],nrow=16)
+  image_i <- image_i[,16:1]
+  image(1:16,1:16, image_i , col = gray(256:0/256),xlab="",ylab="",xaxt="n",yaxt="n")
+}
+
+
+
+## Part(f)
+predictions <- nearest_center( train , test , cl , "median","manhattan")
+table(test[,1] , predictions[,1],dnn=c("Observed","Predicted"))
+mean(test[,1] == predictions[,1])
+
+## Part(g)
+## Find indices of 5 fartest test cases
+max_dist <- rep(0,5)
+for (i in 0:4){
+  max_dist[i+1] <- which( predictions[,2] == sort(predictions[,2],partial=nrow(predictions)-i)[nrow(predictions)-i])
+}
+
+for (i in max_dist){
+  image_i <- matrix(test[i,-1],nrow=16)
+  image_i <- image_i[,16:1]
+  image(1:16,1:16, image_i , col = gray(256:0/256),xlab="",ylab="",xaxt="n",yaxt="n")
+}
+
+
+## Part(h)
