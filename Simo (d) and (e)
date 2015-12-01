@@ -1,0 +1,18 @@
+##part d
+near_cent_prediction <- nearest_center( train , test , cl , "mean","euclidean")
+table(test[,1] , near_cent_prediction[,1],dnn=c("Observations","Predictions"))
+mean(test[,1] == near_cent_prediction[,1])
+
+
+##part e
+
+max_distance <- rep(0,5)
+for (i in 0:4){
+  max_distance[i+1] <- which( near_cent_prediction[,2] == sort(near_cent_prediction[,2],partial=nrow(near_cent_prediction)-i)[nrow(near_cent_prediction)-i])
+}
+
+for (i in max_distance){
+  image_i <- matrix(test[i,-1],nrow=16)
+  image_i <- image_i[,16:1]
+  image(1:16,1:16, image_i , col = gray(256:0/256),xlab="",ylab="",xaxt="n",yaxt="n")
+}
