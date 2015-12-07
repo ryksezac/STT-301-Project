@@ -1,0 +1,181 @@
+## Part(a)
+
+## Function to classify data using the nearest centers method
+  # train: training data without classes
+  # test: test data with classes include
+  # cl: vector of classes of the training data
+  # center: "mean" or "median"
+  # distance: "euclidean" or "manhattan"
+nearest_center <- function( train , test , cl , center , distance ){
+  test_pixels <- test[,2:257]
+  test_classes <- test[,1]
+  
+  # Calculate the centers of the training data
+  train_center = matrix(nrow=10,ncol=256,0)
+  if (center == "mean"){
+    # Calculate Means
+    for(i in 0:9){
+      train_center[i+1,] = apply(train[cl==i,], MARGIN = 2 , FUN = mean)
+    }
+  }else{
+    # Calculate Medians
+    for(i in 0:9){
+      train_center[i+1,] = apply(train[cl==i,], MARGIN = 2 , FUN = median)
+    }
+  }
+  
+  # Function to calculate the distance of the test data from each center
+  # Returns the index and distance of the nearest center
+  calc_Dist <- function( row, distance, train_center){
+    # Create a matrix with the test data repeated in each row, allowing the distance calculation
+    # for each center to be done at the same time.
+    temp = rbind(row,row,row,row,row,row,row,row,row,row)
+    dist = rep(1e2,nrow(train_center))
+    if (distance == "euclidean"){
+      # Calculate Euclidean Distance
+      dist = rowSums((temp - train_center)^2)
+    }else{
+      # Calculate Manhattan Distance
+      dist = rowSums(abs(temp-train_center))
+    }
+    # Find the index of the nearest center
+    index = which.min(dist)
+    
+    # Return index, distance
+    # Index - 1 since classes range 0-9, but indexes are 1-10
+    return(c(index-1,dist[index]))
+  }
+  
+  # Initialize vectors to hold the predicted classes and distances
+  Class <- rep(NA,length(test_classes))
+  Dist <- rep(NA,length(test_classes))
+  
+  # Find the nearest center for each row in the test data, and store the result in the
+  # Class and Dist vectors
+  for (i in 1:nrow(test_pixels)){
+    result = calc_Dist(test_pixels[i,],distance,train_center)
+    Class[i] <- result[1]
+    Dist[i] <- result[2]
+  }
+  
+  return(cbind(Class,Dist))
+}
+
+
+## Load Data
+  library(ElemStatLearn)
+  library(class)
+  data(zip.train)
+  data(zip.test)
+  train = zip.train[,-1]
+  cl = zip.train[,1]
+  test = zip.test
+ 
+  
+## Part(b)
+# Calculate the means of the training data
+means = matrix(nrow=10,ncol=256,0)
+for(i in 0:9){
+  means[i+1,] = apply(train[cl==i,], MARGIN = 2 , FUN = mean)
+}
+
+# Draw the mean images
+for (i in 1:10){
+  image_i <- matrix(means[i,],nrow=16)
+  image_i <- image_i[,16:1]
+  image(1:16,1:16, image_i , col = gray(256:0/256),xlab="",ylab="",xaxt="n",yaxt="n")
+}
+
+
+
+## Part(c)
+# Calculate the medians of the training data
+medians = matrix(nrow=10,ncol=256,0)
+for(i in 0:9){
+  medians[i+1,] = apply(train[cl==i,], MARGIN = 2 , FUN = median)
+}
+
+# Draw the median images
+for (i in 1:10){
+  image_i <- matrix(medians[i,],nrow=16)
+  image_i <- image_i[,16:1]
+  image(1:16,1:16, image_i , col = gray(256:0/256),xlab="",ylab="",xaxt="n",yaxt="n")
+}
+
+
+## Part(d)
+predictions <- nearest_center( train , test , cl , "mean","euclidean")
+# Confusion Matrix
+table(test[,1] , predictions[,1],dnn=c("Observed","Predicted"))
+# Proportion Correct
+mean(test[,1] == predictions[,1])
+
+## Part(e)
+## Find indices of 5 farthest test cases
+
+# Initialize vector to store indices
+max_dist <- rep(0,5)
+for (i in 0:4){
+  # On each iteration, find the (i+1)th highest distance
+  max_dist[i+1] <- which( predictions[,2] == sort(predictions[,2],partial=nrow(predictions)-i)[nrow(predictions)-i])
+}
+
+# Draw the image of the 5 farthest test cases
+for (i in max_dist){
+  image_i <- matrix(test[i,-1],nrow=16)
+  image_i <- image_i[,16:1]
+  image(1:16,1:16, image_i , col = gray(256:0/256),xlab="",ylab="",xaxt="n",yaxt="n")
+}
+
+
+
+## Part(f)
+predictions <- nearest_center( train , test , cl , "median","manhattan")
+# Confusion Matrix
+table(test[,1] , predictions[,1],dnn=c("Observed","Predicted"))
+# Proportion Correct
+mean(test[,1] == predictions[,1])
+
+## Part(g)
+## Find indices of 5 fartest test cases
+
+# Initialize vector to store indices
+max_dist <- rep(0,5)
+for (i in 0:4){
+  # On each iteration, find the (i+1) highest distance
+  max_dist[i+1] <- which( predictions[,2] == sort(predictions[,2],partial=nrow(predictions)-i)[nrow(predictions)-i])
+}
+
+# Draw the image of the 5 farthest test cases
+for (i in max_dist){
+  image_i <- matrix(test[i,-1],nrow=16)
+  image_i <- image_i[,16:1]
+  image(1:16,1:16, image_i , col = gray(256:0/256),xlab="",ylab="",xaxt="n",yaxt="n")
+}
+
+
+## Part(h)
+proportion_correct <- numeric(3)
+#k = 1
+knn_digit <- knn(zip.train[,2:257], zip.test[,2:257], zip.train[,1], k = 1, prob = TRUE)
+# Confusion Matrix
+knn_table <- table(knn_digit, zip.test[,1])
+# Proportion Correct
+proportion_correct[1] <- mean(knn_digit == zip.test[,1])
+
+#k = 3
+knn_digit <- knn(zip.train[,2:257], zip.test[,2:257], zip.train[,1], k = 3, prob = TRUE)
+# Confusion matrix
+knn_table <- table(knn_digit, zip.test[,1])
+#Proportion of correct predictions
+proportion_correct[2] <- mean(knn_digit == zip.test[,1])
+
+#k = 5
+knn_digit <- knn(zip.train[,2:257], zip.test[,2:257], zip.train[,1], k = 5, prob = TRUE)
+# Confusion matrix
+knn_table <- table(knn_digit, zip.test[,1])
+# Proportion of correct predictions
+proportion_correct[3] <- mean(knn_digit == zip.test[,1])
+
+# The maximum knn predicted correctly
+max(proportion_correct) 
